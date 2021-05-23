@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.sql.SQLException;
 
 public class ClientHandler {
     private Server server;
@@ -21,33 +22,18 @@ public class ClientHandler {
         new Thread(() -> {
             try {
                 //Authorization
-                while (true) {
-                    String msg = in.readUTF();
-                    if (msg.startsWith("/login ")) {
-                        String usernameFromLogin = msg.split("\\s")[1];
 
-                        if (server.isNickBusy(usernameFromLogin)) {
-                            sendMessage("/login_failed Current nickname has already been occupied");
-                            continue;
-                        }
-
-                        username = usernameFromLogin;
-                        sendMessage("/login_ok " + username);
-                        server.subscribe(this);
-                        break;
-                    }
-                }
                 //Communication with client
                 while (true) {
                     String msg = in.readUTF();
+                    if(msg.startsWith("/")) {
+                        executeCommand(msg);
+                        continue;
+                    }
                     //My nickname request
                     if (msg.startsWith("/who_am_i")) {
                         sendMessage("Your nickname is: " + username + "\n");
                         continue;
-                    } if (msg.startsWith("/exit")) {
-                        disconnect();
-                    } if (msg.startsWith("/w ")) {
-                        server.privateMessage(msg, username);
                     } else {
                         server.broadcastMessage(username + " : " + msg);
                     }
@@ -58,6 +44,38 @@ public class ClientHandler {
                 disconnect();
             }
         }).start();
+    }
+
+    private void executeCommand (String cmd) {
+        if(cmd.startsWith("/w" )) {
+            String[] tokens = cmd.split("\\s",3);
+            server.sendPrivateMessage(this, tokens[1], tokens[2]);
+            return;
+        }
+        if (cmd.startsWith("/exit")) {
+            disconnect();
+        }
+        if (cmd.startsWith("/login ")) {
+            String usernameFromLogin = cmd.split("\\s")[1];
+            if (!server.isUserInDatabase(usernameFromLogin)) {
+                sendMessage("/login_failed Current nickname has already been occupied");
+                return;
+            }
+            if (server.isUserOnline(usernameFromLogin)) {
+                sendMessage("/login_failed Current user is online");
+                return;
+            }
+
+            username = usernameFromLogin;
+            sendMessage("/login_ok " + username);
+            server.subscribe(this);
+            //SQL name change
+
+        } if (cmd.startsWith("/changename ")) {
+            String newName = cmd.split("\\s")[1];
+            server.nameChanger(newName, this);
+            server.broadcastMessage("Next session " + this.getUsername() + " will start as " + newName + "\n");
+        }
     }
 
     private void disconnect() {
@@ -85,24 +103,15 @@ public class ClientHandler {
         }
     }
 
-    public void sendMessage(String message) throws IOException {
-        out.writeUTF(message);
-    }
-    //Private messages
-    public void sendPrivateMessage(String message, int index, String name) throws IOException {
-        String result = message.substring(index);
-        out.writeUTF(name + " whispers: " + result);
+    public void sendMessage(String message) {
+        try {
+            out.writeUTF(message);
+        } catch (IOException e) {
+            disconnect();
+        }
     }
 
     public String getUsername() {
         return username;
-    }
-
-    public void setIn(DataInputStream in) {
-        this.in = in;
-    }
-
-    public void setOut(DataOutputStream out) {
-        this.out = out;
     }
 }

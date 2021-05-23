@@ -1,17 +1,17 @@
 package com.gbjavalessons.chat.client;
 
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.sql.Connection;
+import java.sql.Statement;
 
 public class Controller {
     @FXML
@@ -23,10 +23,15 @@ public class Controller {
     @FXML
     HBox loginPanel, msgPanel;
 
+    @FXML
+    ListView<String> clientList;
+
     private Socket socket;
     private DataInputStream in;
     private DataOutputStream out;
     private String username;
+    private static Connection connection;
+    private static Statement stmt;
 
     public void sendMsg(ActionEvent actionEvent) {
         String msg = msgField.getText() + '\n';
@@ -75,7 +80,7 @@ public class Controller {
 
     public void connect() {
         try {
-            socket = new Socket("localhost", 8919);
+            socket = new Socket("localhost", 8920);
             in = new DataInputStream(socket.getInputStream());
             out = new DataOutputStream(socket.getOutputStream());
             Thread dataThread = new Thread(() -> {
@@ -99,6 +104,10 @@ public class Controller {
                     //communication
                     while (true) {
                         String msg = in.readUTF();
+                        if(msg.startsWith("/")) {
+                            executeCommand(msg);
+                            continue;
+                        }
                         msgArea.appendText(msg);
                     }
 
@@ -119,12 +128,31 @@ public class Controller {
         }
     }
 
-    public void disconnect() throws IOException {
-        //Disconnect actions
-        setUsername(null);
-        msgArea.clear();
-        if (socket != null) {
-            socket.close();
+    private void executeCommand(String cmd) {
+        if (cmd.startsWith("/clients_list")) {
+            String[] tokens = cmd.split("\\s");
+
+            Platform.runLater(()-> {
+                clientList.getItems().clear();
+                for (int i = 1; i < tokens.length; i++) {
+                    clientList.getItems().add(tokens[i]);
+                }
+            });
         }
     }
+
+    public void disconnect() throws IOException {
+        //Disconnect actions
+        try {
+            setUsername(null);
+            msgArea.clear();
+            if (socket != null) {
+                socket.close();
+            }
+        } catch (IOException e) {
+            Alert alert = new Alert(Alert.AlertType.WARNING, "You've disconnected", ButtonType.OK);
+            alert.showAndWait();
+        }
+    }
+
 }
