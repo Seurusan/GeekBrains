@@ -1,8 +1,6 @@
 package com.gbjavalessons.chat.server;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.sql.SQLException;
 
@@ -21,8 +19,6 @@ public class ClientHandler {
 
         new Thread(() -> {
             try {
-                //Authorization
-
                 //Communication with client
                 while (true) {
                     String msg = in.readUTF();
@@ -36,6 +32,7 @@ public class ClientHandler {
                         continue;
                     } else {
                         server.broadcastMessage(username + " : " + msg);
+                        server.messageIntoFile(username + " : " + msg);
                     }
                 }
             } catch(IOException e){
@@ -46,7 +43,7 @@ public class ClientHandler {
         }).start();
     }
 
-    private void executeCommand (String cmd) {
+    private void executeCommand (String cmd) throws IOException {
         if(cmd.startsWith("/w" )) {
             String[] tokens = cmd.split("\\s",3);
             server.sendPrivateMessage(this, tokens[1], tokens[2]);
@@ -69,6 +66,8 @@ public class ClientHandler {
             username = usernameFromLogin;
             sendMessage("/login_ok " + username);
             server.subscribe(this);
+            readFromFile(username);
+
             //SQL name change
 
         } if (cmd.startsWith("/changename ")) {
@@ -113,5 +112,28 @@ public class ClientHandler {
 
     public String getUsername() {
         return username;
+    }
+
+    /**
+     * 2.** После загрузки клиента показывать ему последние 100 строк истории чата.
+     */
+
+    public void readFromFile (String username) {
+        try {
+            File file = new File("C:\\Code\\history_" + username + ".txt");
+            FileReader fr = new FileReader(file);
+            BufferedReader reader = new BufferedReader(fr);
+            String line = reader.readLine();
+            int flag = 0;
+            while ((line != null) & (flag < 100)) {
+                sendMessage(line + "\n");
+                line = reader.readLine();
+                flag++;
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

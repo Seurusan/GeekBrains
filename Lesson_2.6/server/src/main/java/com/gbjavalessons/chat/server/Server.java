@@ -1,8 +1,6 @@
 package com.gbjavalessons.chat.server;
 
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -93,6 +91,14 @@ public class Server {
         }
     }
 
+    public void messageIntoFile(String message) throws IOException {
+        for (ClientHandler clientHandler : clients) {
+            FileWriter writer = new FileWriter("C:\\Code\\history_" + clientHandler.getUsername() + ".txt", true);
+            writer.append(message);
+            writer.close();
+        }
+    }
+
     public void nameChanger(String newName, ClientHandler clientHandler) {
         try {
             connect();
@@ -105,11 +111,19 @@ public class Server {
     }
 
     //Private messages
-    public void sendPrivateMessage(ClientHandler sender, String receiverUsername, String message) {
+    public void sendPrivateMessage(ClientHandler sender, String receiverUsername, String message) throws IOException {
         for (ClientHandler client : clients) {
             if (client.getUsername().equals(receiverUsername)) {
+                //Receiver actions
                 client.sendMessage("From: " + sender.getUsername() + " message " + message);
+                FileWriter writer = new FileWriter("C:\\Code\\history_" + client.getUsername() + ".txt", true);
+                writer.append("From: " + sender.getUsername() + " message " + message);
+                writer.close();
+                //Sender actions
                 sender.sendMessage("To: " + receiverUsername + " message " + message);
+                FileWriter writer_s = new FileWriter("C:\\Code\\history_" + sender.getUsername() + ".txt", true);
+                writer_s.append("To: " + receiverUsername + " message " + message);
+                writer_s.close();
                 return;
             }
         }
