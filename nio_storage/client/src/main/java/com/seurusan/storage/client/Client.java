@@ -26,7 +26,7 @@ public class Client {
             ByteBuffer buffer = ByteBuffer.wrap(message);
             client.write(buffer);
 
-            log("sending: " + text);
+            log("Sending: " + text);
             buffer.clear();
 
             Thread.sleep(2000);
