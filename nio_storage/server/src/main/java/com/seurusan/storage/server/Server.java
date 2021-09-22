@@ -57,7 +57,7 @@ public class Server {
 
                     log("Message received: " + result);
 
-                    if (result.equals("Crunchify")) {
+                    if (result.equals("Close connect")) {
                         client.close();
                         log("\nClosing the connection...");
                         log("\nWaiting for new connections...");

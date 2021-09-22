@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        https://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        https://www.springframework.org/schema/context/spring-context.xsd">
+
+
+<context:annotation-config/>
+
+    <bean id="idNumber" class="ru.spring.product.IdNumber" scope="prototype"/>
+    <bean id="nameOf" class="ru.spring.product.NameOf" scope="prototype"/>
+    <bean id="price" class="ru.spring.product.Price" scope="prototype"/>
+
+    <bean id="product1" class="ru.spring.product.Product"/>
+    <bean id="product2" class="ru.spring.product.Product"/>
+    <bean id="product3" class="ru.spring.product.Product"/>
+    <bean id="product4" class="ru.spring.product.Product"/>
+    <bean id="product5" class="ru.spring.product.Product"/>
+
+    <bean id="products" class="ru.spring.product.ProductRepository">
+        <constructor-arg>
+            <list>
+                <ref bean="product1"/>
+                <ref bean="product2"/>
+                <ref bean="product3"/>
+                <ref bean="product4"/>
+                <ref bean="product5"/>
+            </list>
+        </constructor-arg>
+    </bean>
+
+    <bean id="cart" class="ru.spring.product.Cart" scope="prototype">
+        <constructor-arg>
+            <list>
+            </list>
+        </constructor-arg>
+    </bean>
+
+</beans>
